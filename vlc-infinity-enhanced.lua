@@ -126,7 +126,8 @@ local function get_platform()
     return os_name
 end
 
-local PLATFORM = get_platform()
+local PLATFORM = "linux"
+pcall(function() PLATFORM = get_platform() end)
 
 -- ============================================================================
 -- UTILITY FUNCTIONS
