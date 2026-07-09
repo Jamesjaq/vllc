@@ -5,7 +5,7 @@ echo "VLC Infinity Enhanced - Universal Installer (Unix)"
 echo "======================================================"
 echo ""
 
-EXT_FILE="vlc-infinity-enhanced.lua"
+EXT_FILE="vlc_inf.lua"
 OS_TYPE=$(uname)
 
 # Check if extension file exists
