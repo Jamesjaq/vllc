@@ -1251,11 +1251,16 @@ end
 -- ============================================================================
 
 function activate()
-    current_config = load_config()
-    load_favorites()
-    load_history()
-    load_watch_later()
-    load_epg_data()
+    vlc.msg.info("VLC Infinity: Activating...")
+    
+    local success, err = pcall(function()
+        current_config = load_config()
+        load_favorites()
+        load_history()
+        load_watch_later()
+        load_epg_data()
+    end)
+    if not success then vlc.msg.err("VLC Infinity: Data load error: " .. tostring(err)) end
     
     if not main_dlg then
         main_dlg = vlc.dialog("VLC Infinity Enhanced v0.3")
