@@ -16,21 +16,24 @@ VLC Infinity Enhanced is a comprehensive media streaming extension for VLC Media
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (One-Click Install)
 
-1. **Download the Extension:**
-   Download the [vlc-infinity-enhanced.lua](./vlc-infinity-enhanced.lua) file from this repository.
+### Windows
+1. Download this repository as a ZIP and extract it.
+2. Double-click **`install.bat`**.
+3. Open VLC and go to `View > VLC Infinity Enhanced`.
 
-2. **Install to VLC:**
-   Move the file to your VLC extensions folder:
-   - **Windows:** `%APPDATA%\vlc\lua\extensions\`
-   - **Linux:** `~/.local/share/vlc/lua/extensions/`
-   - **macOS:** `~/Library/Application Support/org.videolan.vlc/lua/extensions/`
+### Linux & macOS
+1. Download this repository or clone it.
+2. Open terminal in the folder and run: `bash install.sh`.
+3. Open VLC and go to `View > VLC Infinity Enhanced`.
+
+### Android & iOS (Manual)
+1. Download the [vlc-infinity-enhanced.lua](./vlc-infinity-enhanced.lua) file.
+2. Move it to the VLC extensions folder:
    - **Android:** `/sdcard/Android/data/org.videolan.vlc/files/lua/extensions/`
    - **iOS:** Move to the VLC folder via the Files app.
-
-3. **Restart VLC:**
-   Open VLC and navigate to `View > VLC Infinity Enhanced` to start streaming.
+3. Restart VLC and check the menu.
 
 ---
 
