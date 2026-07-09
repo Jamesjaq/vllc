@@ -80,11 +80,28 @@ local GEO_BLOCKED_REGIONS = {}
 -- ============================================================================
 
 local main_dlg = nil
-local config_file = vlc.config.path() .. "vlc-infinity-enhanced-config.json"
-local favorites_file = vlc.config.path() .. "vlc-infinity-enhanced-favorites.json"
-local history_file = vlc.config.path() .. "vlc-infinity-enhanced-history.json"
-local watch_later_file = vlc.config.path() .. "vlc-infinity-enhanced-watchlater.json"
-local epg_file = vlc.config.path() .. "vlc-infinity-enhanced-epg.json"
+local function get_config_dir()
+    local dir = vlc.config.userdatadir()
+    if not dir then
+        dir = vlc.config.configdir()
+    end
+    if not dir then
+        dir = vlc.config.homedir()
+    end
+    
+    local sep = (vlc.config.homedir():find("\\") and "\\") or "/"
+    if dir:sub(-1) ~= sep then
+        dir = dir .. sep
+    end
+    return dir
+end
+
+local config_dir = get_config_dir()
+local config_file = config_dir .. "vlc-infinity-enhanced-config.json"
+local favorites_file = config_dir .. "vlc-infinity-enhanced-favorites.json"
+local history_file = config_dir .. "vlc-infinity-enhanced-history.json"
+local watch_later_file = config_dir .. "vlc-infinity-enhanced-watchlater.json"
+local epg_file = config_dir .. "vlc-infinity-enhanced-epg.json"
 
 local favorites = {}
 local watch_history = {}
