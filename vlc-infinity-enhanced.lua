@@ -5,7 +5,7 @@
 
 function descriptor()
     return {
-        title = "VLC Infinity Enhanced",
+        title = "VLC Infinity",
         version = "0.3",
         author = "Manus AI",
         url = "https://github.com/Jamesjaq/vlc",
