@@ -77,15 +77,17 @@ end
 function show_main_menu()
     vlc.msg.info("VLC Infinity: Opening main menu...")
     local success, err = pcall(function()
-        if not main_dlg then
-            main_dlg = vlc.dialog("VLC Infinity")
+        if main_dlg then
+            main_dlg:delete()
+            main_dlg = nil
         end
+        
+        main_dlg = vlc.dialog("VLC Infinity")
         if not main_dlg then
             vlc.msg.err("VLC Infinity: Failed to create dialog")
             return
         end
         
-        main_dlg:clear()
         main_dlg:add_label("<b>VLC Infinity v0.3.1</b>", 1, 1, 4, 1)
         
         main_dlg:add_button("🎬 Movies", function() current_mode = "movies"; show_search_dialog() end, 1, 2, 2, 1)
@@ -105,7 +107,8 @@ function show_main_menu()
 end
 
 function show_search_dialog()
-    main_dlg:clear()
+    if main_dlg then main_dlg:delete() end
+    main_dlg = vlc.dialog("VLC Infinity - Search")
     main_dlg:add_label("<b>Search " .. current_mode:upper() .. "</b>", 1, 1, 4, 1)
     
     local input = main_dlg:add_input(current_query, 1, 2, 3, 1)
@@ -137,7 +140,8 @@ function perform_search()
 end
 
 function display_results()
-    main_dlg:clear()
+    if main_dlg then main_dlg:delete() end
+    main_dlg = vlc.dialog("VLC Infinity - Results")
     main_dlg:add_label("<b>Results (Page " .. current_page .. ")</b>", 1, 1, 4, 1)
     
     local row = 2
@@ -202,7 +206,8 @@ function browse_iptv()
 end
 
 function show_settings()
-    main_dlg:clear()
+    if main_dlg then main_dlg:delete() end
+    main_dlg = vlc.dialog("VLC Infinity - Settings")
     main_dlg:add_label("<b>Settings</b>", 1, 1, 4, 1)
     main_dlg:add_label("TMDB API Key:", 1, 2, 1, 1)
     local key_input = main_dlg:add_input(TMDB_API_KEY, 2, 2, 3, 1)
