@@ -1,35 +1,15 @@
--- VLC Infinity v0.3 (Bulletproof Edition)
--- Fixed for maximum compatibility with all VLC versions (including Kali/Debian)
+-- VLC Infinity v0.3.2 (Persistent UI Edition)
+-- Redesigned for maximum compatibility with Kali/Debian VLC
 
 function descriptor()
     return {
         title = "VLC Infinity",
-        version = "0.3.1",
+        version = "0.3.2",
         author = "Manus AI",
         url = "https://github.com/Jamesjaq/vlc",
         description = "Advanced streaming for movies, TV, and Cable TV.",
         capabilities = {"menu"}
     }
-end
-
--- ============================================================================
--- COMPATIBILITY WRAPPERS
--- ============================================================================
-
-local function get_http_content(url)
-    -- Try the most compatible way to fetch URL content in VLC
-    local stream = vlc.stream(url)
-    if not stream then return nil end
-    
-    local content = ""
-    local count = 0
-    while count < 100 do
-        local chunk = stream:read(4096)
-        if not chunk or chunk == "" then break end
-        content = content .. chunk
-        count = count + 1
-    end
-    return content
 end
 
 -- ============================================================================
@@ -55,17 +35,35 @@ local TV_PROVIDERS = {
 -- ============================================================================
 
 local main_dlg = nil
+local search_input = nil
+local results_list = nil
 local current_results = {}
-local current_page = 1
-local current_query = ""
-local current_mode = "movies" -- movies, tv, animation, iptv
+local current_mode = "movies"
+
+-- ============================================================================
+-- UTILITIES
+-- ============================================================================
+
+local function get_http_content(url)
+    local stream = vlc.stream(url)
+    if not stream then return nil end
+    local content = ""
+    local count = 0
+    while count < 100 do
+        local chunk = stream:read(4096)
+        if not chunk or chunk == "" then break end
+        content = content .. chunk
+        count = count + 1
+    end
+    return content
+end
 
 -- ============================================================================
 -- CORE FUNCTIONS
 -- ============================================================================
 
 function activate()
-    show_main_menu()
+    create_dialog()
 end
 
 function deactivate()
@@ -76,48 +74,55 @@ function close()
     deactivate()
 end
 
-function show_main_menu()
-    vlc.msg.info("VLC Infinity: Opening main menu...")
-    local success, err = pcall(function()
-        if main_dlg then main_dlg:delete() end
-        main_dlg = vlc.dialog("VLC Infinity")
-        
-        main_dlg:add_label("<b>VLC Infinity v0.3.1</b>", 1, 1, 10, 1)
-        
-        main_dlg:add_button("🎬 Movies", function() current_mode = "movies"; show_search_dialog() end, 1, 2, 5, 1)
-        main_dlg:add_button("📺 TV Series", function() current_mode = "tv"; show_search_dialog() end, 6, 2, 5, 1)
-        main_dlg:add_button("🦄 Animation", function() current_mode = "animation"; browse_animation() end, 1, 3, 5, 1)
-        main_dlg:add_button("📡 Cable TV", function() current_mode = "iptv"; browse_iptv() end, 6, 3, 5, 1)
-        
-        main_dlg:add_label("----------------------------------------------------------------", 1, 4, 10, 1)
-        main_dlg:add_button("⚙️ Settings", show_settings, 1, 5, 10, 1)
-    end)
-    if not success then vlc.msg.err("VLC Infinity: Menu error: " .. tostring(err)) end
+function create_dialog()
+    if main_dlg then main_dlg:delete() end
+    main_dlg = vlc.dialog("VLC Infinity")
+    
+    -- ROW 1: TITLE
+    main_dlg:add_label("<b>VLC Infinity v0.3.2</b>", 1, 1, 10, 1)
+    
+    -- ROW 2: MODE SELECTOR
+    main_dlg:add_button("🎬 Movies", function() current_mode = "movies"; update_ui() end, 1, 2, 2, 1)
+    main_dlg:add_button("📺 TV", function() current_mode = "tv"; update_ui() end, 3, 2, 2, 1)
+    main_dlg:add_button("🦄 Anime", function() current_mode = "animation"; update_ui() end, 5, 2, 2, 1)
+    main_dlg:add_button("📡 Cable", function() current_mode = "iptv"; update_ui() end, 7, 2, 2, 1)
+    
+    -- ROW 3: SEARCH LABEL
+    main_dlg:add_label("<b>Search:</b>", 1, 3, 2, 1)
+    search_input = main_dlg:add_input("", 3, 3, 6, 1)
+    main_dlg:add_button("🔍 GO", perform_search, 9, 3, 2, 1)
+    
+    -- ROW 4: RESULTS LIST
+    main_dlg:add_label("<b>Results:</b>", 1, 4, 10, 1)
+    results_list = main_dlg:add_list(1, 5, 10, 5)
+    
+    -- ROW 5: PLAY BUTTON
+    main_dlg:add_button("▶️ PLAY SELECTED", play_selected, 1, 10, 10, 1)
+    
+    update_ui()
 end
 
-function show_search_dialog()
-    if main_dlg then main_dlg:delete() end
-    main_dlg = vlc.dialog("VLC Infinity - Search")
-    main_dlg:add_label("<b>Search " .. current_mode:upper() .. "</b>", 1, 1, 10, 1)
-    
-    main_dlg:add_label("Enter title below:", 1, 2, 10, 1)
-    local input = main_dlg:add_input(current_query, 1, 3, 10, 1)
-    
-    main_dlg:add_button("🔍 Perform Search", function() 
-        current_query = input:get_text()
-        current_page = 1
-        perform_search()
-    end, 1, 4, 5, 1)
-    
-    main_dlg:add_button("⬅️ Back to Home", show_main_menu, 6, 4, 5, 1)
+function update_ui()
+    if main_dlg then
+        vlc.msg.info("VLC Infinity: Mode switched to " .. current_mode)
+    end
 end
 
 function perform_search()
+    local query = search_input:get_text()
+    if not query or query == "" then return end
+    
+    vlc.msg.info("VLC Infinity: Searching for " .. query)
+    
     local url = ""
     if current_mode == "movies" or current_mode == "animation" then
-        url = TMDB_BASE_URL .. "/search/movie?api_key=" .. TMDB_API_KEY .. "&query=" .. vlc.strings.url_encode(current_query) .. "&page=" .. current_page
+        url = TMDB_BASE_URL .. "/search/movie?api_key=" .. TMDB_API_KEY .. "&query=" .. vlc.strings.url_encode(query)
+    elseif current_mode == "tv" then
+        url = TMDB_BASE_URL .. "/search/tv?api_key=" .. TMDB_API_KEY .. "&query=" .. vlc.strings.url_encode(query)
     else
-        url = TMDB_BASE_URL .. "/search/tv?api_key=" .. TMDB_API_KEY .. "&query=" .. vlc.strings.url_encode(current_query) .. "&page=" .. current_page
+        -- IPTV logic placeholder
+        results_list:add("Global Cable TV - Coming Soon", 1)
+        return
     end
     
     local content = get_http_content(url)
@@ -125,101 +130,48 @@ function perform_search()
         local data = vlc.json.decode(content)
         if data and data.results then
             current_results = data.results
-            display_results()
+            results_list:clear()
+            for i, item in ipairs(current_results) do
+                if i > 20 then break end
+                local title = item.title or item.name or "Unknown"
+                local year = (item.release_date or item.first_air_date or ""):sub(1,4)
+                results_list:add(title .. " (" .. year .. ")", i)
+            end
         end
     end
 end
 
-function display_results()
-    if main_dlg then main_dlg:delete() end
-    main_dlg = vlc.dialog("VLC Infinity - Results")
-    main_dlg:add_label("<b>Results (Page " .. current_page .. ")</b>", 1, 1, 4, 1)
+function play_selected()
+    local selection = results_list:get_selection()
+    if not selection then return end
     
-    local row = 2
-    for i, item in ipairs(current_results) do
-        if i > 10 then break end -- Limit display for performance
-        local title = item.title or item.name or "Unknown"
-        local year = (item.release_date or item.first_air_date or ""):sub(1,4)
-        
-        main_dlg:add_label(title .. " (" .. year .. ")", 1, row, 3, 1)
-        main_dlg:add_button("▶️ Play", function() play_item(item) end, 4, row, 1, 1)
-        row = row + 1
-    end
+    -- Get the first key from selection table
+    local idx = nil
+    for i, _ in pairs(selection) do idx = i; break end
+    if not idx then return end
     
-    main_dlg:add_button("⬅️ Prev", function() if current_page > 1 then current_page = current_page - 1; perform_search() end end, 1, row, 1, 1)
-    main_dlg:add_button("Next ➡️", function() current_page = current_page + 1; perform_search() end, 2, row, 1, 1)
-    main_dlg:add_button("🏠 Home", show_main_menu, 3, row, 2, 1)
-end
-
-function play_item(item)
-    vlc.msg.info("VLC Infinity: Resolving link for " .. (item.title or item.name))
+    local item = current_results[idx]
+    if not item then return end
     
-    local item_type = "movie"
-    if current_mode == "tv" then item_type = "tv" end
+    vlc.msg.info("VLC Infinity: Resolving " .. (item.title or item.name))
     
+    local item_type = (current_mode == "tv") and "tv" or "movie"
     local detail_url = TMDB_BASE_URL .. "/" .. item_type .. "/" .. item.id .. "?api_key=" .. TMDB_API_KEY .. "&append_to_response=external_ids"
+    
     local content = get_http_content(detail_url)
-    if not content then 
-        vlc.msg.err("VLC Infinity: Failed to get item details")
-        return 
-    end
-    
-    local details = vlc.json.decode(content)
-    local imdb_id = details.external_ids and details.external_ids.imdb_id
-    
-    if not imdb_id then
-        vlc.msg.err("VLC Infinity: No IMDb ID found for " .. (item.title or item.name))
-        return
-    end
-    
-    local play_url = ""
-    if current_mode == "tv" then
-        play_url = TV_PROVIDERS[1].base_url:gsub("{imdb_id}", imdb_id):gsub("{season}", "1"):gsub("{episode}", "1")
-    else
-        play_url = STREAMING_PROVIDERS[1].base_url:gsub("{imdb_id}", imdb_id)
-    end
-    
-    vlc.msg.info("VLC Infinity: Playing " .. play_url)
-    
-    -- Use a more robust playlist addition for Linux
-    local item_to_play = {
-        path = play_url,
-        name = "VLC Infinity: " .. (item.title or item.name),
-        options = { "network-caching=3000" }
-    }
-    
-    vlc.playlist.add({item_to_play})
-    vlc.playlist.play()
-end
-
-function browse_animation()
-    local url = TMDB_BASE_URL .. "/discover/movie?api_key=" .. TMDB_API_KEY .. "&with_genres=16&page=" .. current_page .. "&sort_by=popularity.desc"
-    local content = get_http_content(url)
     if content then
-        local data = vlc.json.decode(content)
-        current_results = data.results
-        display_results()
+        local details = vlc.json.decode(content)
+        local imdb_id = details.external_ids and details.external_ids.imdb_id
+        if imdb_id then
+            local play_url = ""
+            if current_mode == "tv" then
+                play_url = TV_PROVIDERS[1].base_url:gsub("{imdb_id}", imdb_id):gsub("{season}", "1"):gsub("{episode}", "1")
+            else
+                play_url = STREAMING_PROVIDERS[1].base_url:gsub("{imdb_id}", imdb_id)
+            end
+            
+            vlc.playlist.add({{path = play_url, name = "VLC Infinity: " .. (item.title or item.name)}})
+            vlc.playlist.play()
+        end
     end
-end
-
-function browse_iptv()
-    if main_dlg then main_dlg:delete() end
-    main_dlg = vlc.dialog("VLC Infinity - Cable TV")
-    main_dlg:add_label("<b>📡 Cable TV Channels</b>", 1, 1, 4, 1)
-    main_dlg:add_label("Loading global channel list...", 1, 2, 4, 1)
-    
-    -- In a real scenario, we'd parse a massive M3U, but for the bulletproof version, 
-    -- we'll provide a few reliable categories or a search.
-    main_dlg:add_button("🏠 Home", show_main_menu, 1, 3, 4, 1)
-end
-
-function show_settings()
-    if main_dlg then main_dlg:delete() end
-    main_dlg = vlc.dialog("VLC Infinity - Settings")
-    main_dlg:add_label("<b>Settings</b>", 1, 1, 4, 1)
-    main_dlg:add_label("TMDB API Key:", 1, 2, 1, 1)
-    local key_input = main_dlg:add_input(TMDB_API_KEY, 2, 2, 3, 1)
-    
-    main_dlg:add_button("💾 Save", function() TMDB_API_KEY = key_input:get_text(); show_main_menu() end, 1, 3, 2, 1)
-    main_dlg:add_button("⬅️ Back", show_main_menu, 3, 3, 2, 1)
 end
