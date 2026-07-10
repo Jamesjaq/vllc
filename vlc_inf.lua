@@ -87,17 +87,21 @@ function create_dialog()
     main_dlg:add_button("🦄 Anime", function() current_mode = "animation"; update_ui() end, 5, 2, 2, 1)
     main_dlg:add_button("📡 Cable", function() current_mode = "iptv"; update_ui() end, 7, 2, 2, 1)
     
-    -- ROW 3: SEARCH LABEL
-    main_dlg:add_label("<b>Search:</b>", 1, 3, 2, 1)
-    search_input = main_dlg:add_input("", 3, 3, 6, 1)
-    main_dlg:add_button("🔍 GO", perform_search, 9, 3, 2, 1)
+    -- ROW 3: QUICK LOAD
+    main_dlg:add_button("🔥 Trending Movies", function() current_mode = "movies"; load_trending() end, 1, 3, 5, 1)
+    main_dlg:add_button("⭐ Popular TV", function() current_mode = "tv"; load_trending() end, 6, 3, 5, 1)
     
-    -- ROW 4: RESULTS LIST
-    main_dlg:add_label("<b>Results:</b>", 1, 4, 10, 1)
-    results_list = main_dlg:add_list(1, 5, 10, 5)
+    -- ROW 4: SEARCH LABEL
+    main_dlg:add_label("<b>Search:</b>", 1, 4, 2, 1)
+    search_input = main_dlg:add_input("Click here to type...", 3, 4, 6, 1)
+    main_dlg:add_button("🔍 GO", perform_search, 9, 4, 2, 1)
     
-    -- ROW 5: PLAY BUTTON
-    main_dlg:add_button("▶️ PLAY SELECTED", play_selected, 1, 10, 10, 1)
+    -- ROW 5: RESULTS LIST
+    main_dlg:add_label("<b>Results:</b>", 1, 5, 10, 1)
+    results_list = main_dlg:add_list(1, 6, 10, 5)
+    
+    -- ROW 6: PLAY BUTTON
+    main_dlg:add_button("▶️ PLAY SELECTED", play_selected, 1, 11, 10, 1)
     
     update_ui()
 end
@@ -108,9 +112,34 @@ function update_ui()
     end
 end
 
+function load_trending()
+    vlc.msg.info("VLC Infinity: Loading trending content for " .. current_mode)
+    local url = ""
+    if current_mode == "movies" or current_mode == "animation" then
+        url = TMDB_BASE_URL .. "/trending/movie/week?api_key=" .. TMDB_API_KEY
+    else
+        url = TMDB_BASE_URL .. "/trending/tv/week?api_key=" .. TMDB_API_KEY
+    end
+    
+    local content = get_http_content(url)
+    if content then
+        local data = vlc.json.decode(content)
+        if data and data.results then
+            current_results = data.results
+            results_list:clear()
+            for i, item in ipairs(current_results) do
+                if i > 20 then break end
+                local title = item.title or item.name or "Unknown"
+                local year = (item.release_date or item.first_air_date or ""):sub(1,4)
+                results_list:add(title .. " (" .. year .. ")", i)
+            end
+        end
+    end
+end
+
 function perform_search()
     local query = search_input:get_text()
-    if not query or query == "" then return end
+    if not query or query == "" or query == "Click here to type..." then return end
     
     vlc.msg.info("VLC Infinity: Searching for " .. query)
     
