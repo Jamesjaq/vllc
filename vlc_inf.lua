@@ -22,10 +22,12 @@ local function get_http_content(url)
     if not stream then return nil end
     
     local content = ""
-    while true do
+    local count = 0
+    while count < 100 do
         local chunk = stream:read(4096)
         if not chunk or chunk == "" then break end
         content = content .. chunk
+        count = count + 1
     end
     return content
 end
@@ -112,7 +114,7 @@ end
 
 function perform_search()
     local url = ""
-    if current_mode == "movies" then
+    if current_mode == "movies" or current_mode == "animation" then
         url = TMDB_BASE_URL .. "/search/movie?api_key=" .. TMDB_API_KEY .. "&query=" .. vlc.strings.url_encode(current_query) .. "&page=" .. current_page
     else
         url = TMDB_BASE_URL .. "/search/tv?api_key=" .. TMDB_API_KEY .. "&query=" .. vlc.strings.url_encode(current_query) .. "&page=" .. current_page
@@ -152,7 +154,10 @@ end
 function play_item(item)
     vlc.msg.info("VLC Infinity: Resolving link for " .. (item.title or item.name))
     
-    local detail_url = TMDB_BASE_URL .. "/" .. (current_mode == "tv" and "tv" or "movie") .. "/" .. item.id .. "?api_key=" .. TMDB_API_KEY .. "&append_to_response=external_ids"
+    local item_type = "movie"
+    if current_mode == "tv" then item_type = "tv" end
+    
+    local detail_url = TMDB_BASE_URL .. "/" .. item_type .. "/" .. item.id .. "?api_key=" .. TMDB_API_KEY .. "&append_to_response=external_ids"
     local content = get_http_content(detail_url)
     if not content then 
         vlc.msg.err("VLC Infinity: Failed to get item details")
