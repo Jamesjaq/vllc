@@ -105,9 +105,9 @@ function show_search_dialog()
         current_query = input:get_text()
         current_page = 1
         perform_search()
-    end, 1, 4, 10, 1)
+    end, 1, 4, 5, 1)
     
-    main_dlg:add_button("⬅️ Back to Home", show_main_menu, 1, 5, 10, 1)
+    main_dlg:add_button("⬅️ Back to Home", show_main_menu, 6, 4, 5, 1)
 end
 
 function perform_search()
