@@ -75,20 +75,33 @@ function close()
 end
 
 function show_main_menu()
-    if not main_dlg then
-        main_dlg = vlc.dialog("VLC Infinity")
+    vlc.msg.info("VLC Infinity: Opening main menu...")
+    local success, err = pcall(function()
+        if not main_dlg then
+            main_dlg = vlc.dialog("VLC Infinity")
+        end
+        if not main_dlg then
+            vlc.msg.err("VLC Infinity: Failed to create dialog")
+            return
+        end
+        
+        main_dlg:clear()
+        main_dlg:add_label("<b>VLC Infinity v0.3.1</b>", 1, 1, 4, 1)
+        
+        main_dlg:add_button("🎬 Movies", function() current_mode = "movies"; show_search_dialog() end, 1, 2, 2, 1)
+        main_dlg:add_button("📺 TV Series", function() current_mode = "tv"; show_search_dialog() end, 3, 2, 2, 1)
+        main_dlg:add_button("🦄 Animation", function() current_mode = "animation"; browse_animation() end, 1, 3, 2, 1)
+        main_dlg:add_button("📡 Cable TV", function() current_mode = "iptv"; browse_iptv() end, 3, 3, 2, 1)
+        
+        main_dlg:add_label("<hr/>", 1, 4, 4, 1)
+        main_dlg:add_button("⚙️ Settings", show_settings, 1, 5, 4, 1)
+        
+        vlc.msg.info("VLC Infinity: Menu built successfully")
+    end)
+    
+    if not success then
+        vlc.msg.err("VLC Infinity: Menu error: " .. tostring(err))
     end
-    main_dlg:clear()
-    
-    main_dlg:add_label("<b>VLC Infinity v0.3.1</b>", 1, 1, 4, 1)
-    
-    main_dlg:add_button("🎬 Movies", function() current_mode = "movies"; show_search_dialog() end, 1, 2, 2, 1)
-    main_dlg:add_button("📺 TV Series", function() current_mode = "tv"; show_search_dialog() end, 3, 2, 2, 1)
-    main_dlg:add_button("🦄 Animation", function() current_mode = "animation"; browse_animation() end, 1, 3, 2, 1)
-    main_dlg:add_button("📡 Cable TV", function() current_mode = "iptv"; browse_iptv() end, 3, 3, 2, 1)
-    
-    main_dlg:add_label("<hr/>", 1, 4, 4, 1)
-    main_dlg:add_button("⚙️ Settings", show_settings, 1, 5, 4, 1)
 end
 
 function show_search_dialog()
