@@ -77,48 +77,37 @@ end
 function show_main_menu()
     vlc.msg.info("VLC Infinity: Opening main menu...")
     local success, err = pcall(function()
-        if main_dlg then
-            main_dlg:delete()
-            main_dlg = nil
-        end
-        
+        if main_dlg then main_dlg:delete() end
         main_dlg = vlc.dialog("VLC Infinity")
-        if not main_dlg then
-            vlc.msg.err("VLC Infinity: Failed to create dialog")
-            return
-        end
         
-        main_dlg:add_label("<b>VLC Infinity v0.3.1</b>", 1, 1, 4, 1)
+        main_dlg:add_label("<b>VLC Infinity v0.3.1</b>", 1, 1, 10, 1)
         
-        main_dlg:add_button("🎬 Movies", function() current_mode = "movies"; show_search_dialog() end, 1, 2, 2, 1)
-        main_dlg:add_button("📺 TV Series", function() current_mode = "tv"; show_search_dialog() end, 3, 2, 2, 1)
-        main_dlg:add_button("🦄 Animation", function() current_mode = "animation"; browse_animation() end, 1, 3, 2, 1)
-        main_dlg:add_button("📡 Cable TV", function() current_mode = "iptv"; browse_iptv() end, 3, 3, 2, 1)
+        main_dlg:add_button("🎬 Movies", function() current_mode = "movies"; show_search_dialog() end, 1, 2, 5, 1)
+        main_dlg:add_button("📺 TV Series", function() current_mode = "tv"; show_search_dialog() end, 6, 2, 5, 1)
+        main_dlg:add_button("🦄 Animation", function() current_mode = "animation"; browse_animation() end, 1, 3, 5, 1)
+        main_dlg:add_button("📡 Cable TV", function() current_mode = "iptv"; browse_iptv() end, 6, 3, 5, 1)
         
-        main_dlg:add_label("<hr/>", 1, 4, 4, 1)
-        main_dlg:add_button("⚙️ Settings", show_settings, 1, 5, 4, 1)
-        
-        vlc.msg.info("VLC Infinity: Menu built successfully")
+        main_dlg:add_label("----------------------------------------------------------------", 1, 4, 10, 1)
+        main_dlg:add_button("⚙️ Settings", show_settings, 1, 5, 10, 1)
     end)
-    
-    if not success then
-        vlc.msg.err("VLC Infinity: Menu error: " .. tostring(err))
-    end
+    if not success then vlc.msg.err("VLC Infinity: Menu error: " .. tostring(err)) end
 end
 
 function show_search_dialog()
     if main_dlg then main_dlg:delete() end
     main_dlg = vlc.dialog("VLC Infinity - Search")
-    main_dlg:add_label("<b>Search " .. current_mode:upper() .. "</b>", 1, 1, 4, 1)
+    main_dlg:add_label("<b>Search " .. current_mode:upper() .. "</b>", 1, 1, 10, 1)
     
-    local input = main_dlg:add_input(current_query, 1, 2, 3, 1)
-    main_dlg:add_button("🔍 Search", function() 
+    main_dlg:add_label("Enter title below:", 1, 2, 10, 1)
+    local input = main_dlg:add_input(current_query, 1, 3, 10, 1)
+    
+    main_dlg:add_button("🔍 Perform Search", function() 
         current_query = input:get_text()
         current_page = 1
         perform_search()
-    end, 4, 2, 1, 1)
+    end, 1, 4, 10, 1)
     
-    main_dlg:add_button("⬅️ Back", show_main_menu, 1, 3, 4, 1)
+    main_dlg:add_button("⬅️ Back to Home", show_main_menu, 1, 5, 10, 1)
 end
 
 function perform_search()
