@@ -161,16 +161,20 @@ function display_results()
 end
 
 function play_item(item)
-    -- Get IMDb ID via details call
+    vlc.msg.info("VLC Infinity: Resolving link for " .. (item.title or item.name))
+    
     local detail_url = TMDB_BASE_URL .. "/" .. (current_mode == "tv" and "tv" or "movie") .. "/" .. item.id .. "?api_key=" .. TMDB_API_KEY .. "&append_to_response=external_ids"
     local content = get_http_content(detail_url)
-    if not content then return end
+    if not content then 
+        vlc.msg.err("VLC Infinity: Failed to get item details")
+        return 
+    end
     
     local details = vlc.json.decode(content)
     local imdb_id = details.external_ids and details.external_ids.imdb_id
     
     if not imdb_id then
-        vlc.msg.err("VLC Infinity: No IMDb ID found")
+        vlc.msg.err("VLC Infinity: No IMDb ID found for " .. (item.title or item.name))
         return
     end
     
@@ -181,7 +185,16 @@ function play_item(item)
         play_url = STREAMING_PROVIDERS[1].base_url:gsub("{imdb_id}", imdb_id)
     end
     
-    vlc.playlist.add({{path = play_url, name = "VLC Infinity: " .. (item.title or item.name)}})
+    vlc.msg.info("VLC Infinity: Playing " .. play_url)
+    
+    -- Use a more robust playlist addition for Linux
+    local item_to_play = {
+        path = play_url,
+        name = "VLC Infinity: " .. (item.title or item.name),
+        options = { "network-caching=3000" }
+    }
+    
+    vlc.playlist.add({item_to_play})
     vlc.playlist.play()
 end
 
@@ -196,7 +209,8 @@ function browse_animation()
 end
 
 function browse_iptv()
-    main_dlg:clear()
+    if main_dlg then main_dlg:delete() end
+    main_dlg = vlc.dialog("VLC Infinity - Cable TV")
     main_dlg:add_label("<b>📡 Cable TV Channels</b>", 1, 1, 4, 1)
     main_dlg:add_label("Loading global channel list...", 1, 2, 4, 1)
     
